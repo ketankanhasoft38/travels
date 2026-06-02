@@ -45,7 +45,7 @@ export default function BookingSuccessPage() {
     <AppShell title="Booking Confirmed">
       <Paper sx={{ p: { xs: 3, md: 4 }, maxWidth: 920, mx: 'auto' }}>
         <Stack spacing={2.5}>
-          <Stack spacing={1.5} sx={{ alignItems: 'center' }} textAlign="center">
+          <Stack spacing={1.5} sx={{ alignItems: 'center', textAlign: 'center' }}>
           <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main' }} />
           <Typography variant="h4">Your booking is successful</Typography>
           <Typography color="text.secondary">
@@ -86,7 +86,11 @@ export default function BookingSuccessPage() {
             </Grid>
           </Grid>
 
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ pt: 1 }} justifyContent="center">
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.5}
+            sx={{ pt: 1, justifyContent: 'center' }}
+          >
             <Button component={Link} href="/" variant="contained">
               Continue Browsing Tours
             </Button>

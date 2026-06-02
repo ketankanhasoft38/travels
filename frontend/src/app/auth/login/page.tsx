@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Box, Button, Grid, Paper, Stack, TextField, Typography } from '@mui/material';
 import { AppShell } from '@/components/layout/app-shell';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get('next') ?? '/creator/tours';
+  const nextPath = useMemo(() => searchParams.get('next') ?? '/creator/tours', [searchParams]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -197,5 +197,21 @@ export default function LoginPage() {
         </Grid>
       </Grid>
     </AppShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppShell title="Login">
+          <Paper sx={{ p: 3 }}>
+            <Typography color="text.secondary">Loading authentication page...</Typography>
+          </Paper>
+        </AppShell>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   );
 }

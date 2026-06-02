@@ -78,7 +78,7 @@ export const appTheme = createTheme({
           fontWeight: 700,
           paddingInline: 16,
         },
-        containedPrimary: {
+        contained: {
           boxShadow: '0 8px 20px rgba(0, 108, 228, 0.24)',
         },
       },
