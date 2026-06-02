@@ -11,6 +11,7 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 
 @Injectable()
 export class BookingsService {
+  // Convert query inputs into safe pagination boundaries.
   private getPagination(pageRaw?: string, limitRaw?: string) {
     const page = Math.max(1, Number(pageRaw ?? 1) || 1);
     const limit = Math.min(50, Math.max(1, Number(limitRaw ?? 10) || 10));
@@ -25,6 +26,7 @@ export class BookingsService {
     private readonly emailService: EmailService,
   ) {}
 
+  // Create a pending booking from public flow and notify traveler.
   async createPublicBooking(slug: string, payload: CreateBookingDto) {
     const tour = await this.toursService.getTourBySlug(slug);
     if (payload.guestCount > tour.guest_limit) {
@@ -34,6 +36,7 @@ export class BookingsService {
     const supabase = this.supabaseService.getClient();
     const totalPriceCents = payload.guestCount * tour.price_cents;
 
+    // Persist booking record with computed total amount.
     const { data, error } = await supabase
       .from('bookings')
       .insert({
@@ -52,6 +55,7 @@ export class BookingsService {
       throw new InternalServerErrorException(error.message);
     }
 
+    // Send transactional email after successful booking insert.
     await this.emailService.sendBookingCreatedEmail({
       customerEmail: payload.visitorEmail,
       customerName: payload.visitorName,
@@ -64,6 +68,7 @@ export class BookingsService {
     return data;
   }
 
+  // List creator bookings with server-side pagination and filters.
   async listCreatorBookings(
     userId: string,
     pageRaw?: string,
@@ -109,6 +114,7 @@ export class BookingsService {
     };
   }
 
+  // Update booking status only when booking belongs to creator.
   async updateBookingStatus(userId: string, bookingId: string, status: 'confirmed' | 'cancelled') {
     const supabase = this.supabaseService.getClient();
     const { data: booking, error: bookingError } = await supabase
@@ -132,6 +138,7 @@ export class BookingsService {
       throw new NotFoundException('Booking not found for this creator');
     }
 
+    // Update status and fetch related tour details for notifications.
     const { data, error } = await supabase
       .from('bookings')
       .update({ status })
@@ -153,6 +160,7 @@ export class BookingsService {
       totalPriceCents: data.total_price_cents as number,
     };
 
+    // Trigger status-specific customer notifications.
     if (status === 'confirmed') {
       await this.emailService.sendBookingConfirmedEmail(emailPayload);
     }

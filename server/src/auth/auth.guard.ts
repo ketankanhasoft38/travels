@@ -19,6 +19,7 @@ type AuthenticatedRequest = Request & {
 export class AuthGuard implements CanActivate {
   constructor(private readonly supabaseService: SupabaseService) {}
 
+  // Validate bearer token and attach user context for downstream handlers.
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const authHeader = request.headers['authorization'];
@@ -31,11 +32,13 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid authorization header');
     }
 
+    // Resolve authenticated user from Supabase auth service.
     const result = await this.supabaseService.getAuthClient().auth.getUser(token);
     if (result.error || !result.data.user) {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
+    // Persist normalized auth data on request object.
     request.user = {
       id: result.data.user.id,
       email: result.data.user.email,

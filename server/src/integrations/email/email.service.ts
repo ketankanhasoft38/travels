@@ -18,6 +18,7 @@ export class EmailService {
 
   constructor(private readonly configService: ConfigService) {}
 
+  // Create and cache SMTP transporter from environment config.
   private getTransporter() {
     if (this.transporter) {
       return this.transporter;
@@ -37,6 +38,9 @@ export class EmailService {
       host,
       port,
       secure: port === 465,
+      connectionTimeout: 20_000,
+      greetingTimeout: 20_000,
+      socketTimeout: 30_000,
       auth: {
         user,
         pass,
@@ -46,6 +50,7 @@ export class EmailService {
     return this.transporter;
   }
 
+  // Send an HTML email and fail gracefully on SMTP errors.
   private async sendMail(to: string, subject: string, html: string) {
     const transporter = this.getTransporter();
     if (!transporter) {
@@ -64,10 +69,12 @@ export class EmailService {
         html,
       });
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}: ${(error as Error).message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown SMTP error';
+      this.logger.error(`Failed to send email to ${to}: ${errorMessage}`);
     }
   }
 
+  // Notify traveler that booking request is successfully received.
   async sendBookingCreatedEmail(payload: BookingEmailPayload) {
     const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1f36;">
@@ -93,6 +100,7 @@ export class EmailService {
     );
   }
 
+  // Notify traveler that creator confirmed the booking.
   async sendBookingConfirmedEmail(payload: BookingEmailPayload) {
     const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1f36;">
@@ -118,6 +126,7 @@ export class EmailService {
     );
   }
 
+  // Notify traveler that booking is cancelled with refund note.
   async sendBookingCancelledEmail(payload: BookingEmailPayload) {
     const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1f36;">
