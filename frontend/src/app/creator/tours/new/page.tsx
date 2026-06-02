@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { TourForm, TourFormPayload } from '@/components/tours/tour-form';
 import { apiClient } from '@/lib/api-client';
+import { getFriendlyErrorMessage } from '@/lib/error-messages';
 
 export default function NewTourPage() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function NewTourPage() {
       router.push('/creator/tours');
       router.refresh();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Failed to create tour');
+      setError(getFriendlyErrorMessage(requestError, 'Unable to create tour. Please review details and try again.'));
     } finally {
       setIsSubmitting(false);
     }

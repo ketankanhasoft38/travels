@@ -1,7 +1,18 @@
 import { Booking, PaginatedResponse, Tour } from '@/lib/types';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { toFriendlyApiMessage } from '@/lib/error-messages';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000/api/v1';
+
+export class ApiRequestError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.status = status;
+  }
+}
 
 const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -14,8 +25,8 @@ const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Request failed with status ${response.status}`);
+    const raw = await response.text();
+    throw new ApiRequestError(toFriendlyApiMessage(raw, response.status), response.status);
   }
 
   return response.json() as Promise<T>;
@@ -25,7 +36,7 @@ const requestPrivate = async <T>(path: string, options?: RequestInit): Promise<T
   const sessionResult = await supabaseBrowser.auth.getSession();
   const token = sessionResult.data.session?.access_token;
   if (!token) {
-    throw new Error('User is not authenticated');
+    throw new ApiRequestError('Please sign in to continue.', 401);
   }
 
   return request<T>(path, {
@@ -67,7 +78,7 @@ export const apiClient = {
     const sessionResult = await supabaseBrowser.auth.getSession();
     const token = sessionResult.data.session?.access_token;
     if (!token) {
-      throw new Error('User is not authenticated');
+      throw new ApiRequestError('Please sign in to continue.', 401);
     }
 
     const formData = new FormData();
@@ -83,8 +94,8 @@ export const apiClient = {
     });
 
     if (!response.ok) {
-      const message = await response.text();
-      throw new Error(message || 'Image upload failed');
+      const raw = await response.text();
+      throw new ApiRequestError(toFriendlyApiMessage(raw, response.status), response.status);
     }
 
     return response.json() as Promise<Tour>;

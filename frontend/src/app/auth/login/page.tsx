@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Box, Button, Grid, Paper, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { AppShell } from '@/components/layout/app-shell';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { getAuthFriendlyMessage } from '@/lib/error-messages';
 
 function LoginPageContent() {
   const router = useRouter();
@@ -52,7 +53,7 @@ function LoginPageContent() {
     const result = await supabaseBrowser.auth.signInWithPassword({ email, password });
     setIsSubmitting(false);
     if (result.error) {
-      setErrorMessage(result.error.message);
+      setErrorMessage(getAuthFriendlyMessage(result.error.message));
       return;
     }
 
@@ -104,7 +105,7 @@ function LoginPageContent() {
 
     setIsSubmitting(false);
     if (result.error) {
-      setErrorMessage(result.error.message);
+      setErrorMessage(getAuthFriendlyMessage(result.error.message));
       return;
     }
 

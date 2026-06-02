@@ -22,6 +22,7 @@ import {
 import { AppShell } from '@/components/layout/app-shell';
 import { apiClient } from '@/lib/api-client';
 import { bookingDraftStore } from '@/lib/booking-draft';
+import { getFriendlyErrorMessage } from '@/lib/error-messages';
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -61,7 +62,7 @@ export default function PaymentPage() {
   const handleProcessPayment = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!draft || !params.slug) {
-      setErrorMessage('Booking details are missing. Please start again.');
+      setErrorMessage('Your booking details are missing. Please enter traveler details again.');
       return;
     }
 
@@ -101,7 +102,7 @@ export default function PaymentPage() {
         `/t/${params.slug}/booking-success?bookingId=${encodeURIComponent(booking.id)}&email=${encodeURIComponent(draft.visitorEmail)}&name=${encodeURIComponent(draft.visitorName)}&guests=${encodeURIComponent(String(draft.guestCount))}&total=${encodeURIComponent(String(booking.total_price_cents ?? 0))}&tour=${encodeURIComponent(params.slug)}`,
       );
     } catch (requestError) {
-      setErrorMessage(requestError instanceof Error ? requestError.message : 'Payment failed');
+      setErrorMessage(getFriendlyErrorMessage(requestError, 'Payment could not be completed. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }

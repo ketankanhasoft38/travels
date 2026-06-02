@@ -55,8 +55,8 @@ export class BookingsService {
       throw new InternalServerErrorException(error.message);
     }
 
-    // Send transactional email after successful booking insert.
-    await this.emailService.sendBookingCreatedEmail({
+    // Notify traveler without blocking booking response beyond email timeout.
+    void this.emailService.sendBookingCreatedEmail({
       customerEmail: payload.visitorEmail,
       customerName: payload.visitorName,
       bookingId: data.id,
@@ -160,12 +160,12 @@ export class BookingsService {
       totalPriceCents: data.total_price_cents as number,
     };
 
-    // Trigger status-specific customer notifications.
+    // Trigger status emails in background; API returns immediately.
     if (status === 'confirmed') {
-      await this.emailService.sendBookingConfirmedEmail(emailPayload);
+      void this.emailService.sendBookingConfirmedEmail(emailPayload);
     }
     if (status === 'cancelled') {
-      await this.emailService.sendBookingCancelledEmail(emailPayload);
+      void this.emailService.sendBookingCancelledEmail(emailPayload);
     }
 
     return data;

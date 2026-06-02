@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import { AppShell } from '@/components/layout/app-shell';
 import { apiClient } from '@/lib/api-client';
+import { getFriendlyErrorMessage } from '@/lib/error-messages';
 import { Tour } from '@/lib/types';
 
 export default function ToursDashboardPage() {
@@ -43,7 +44,7 @@ export default function ToursDashboardPage() {
         setCurrentPage(result.pagination.page);
         setTotalPages(result.pagination.totalPages);
       } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : 'Failed to load tours');
+        setErrorMessage(getFriendlyErrorMessage(error, 'Unable to load tours right now. Please try again.'));
       }
     };
 

@@ -24,6 +24,7 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 import { ApexOptions } from 'apexcharts';
 import { AppShell } from '@/components/layout/app-shell';
 import { apiClient } from '@/lib/api-client';
+import { getFriendlyErrorMessage } from '@/lib/error-messages';
 import { Booking, Tour } from '@/lib/types';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -46,7 +47,7 @@ export default function CreatorDashboardPage() {
         setTours(tourResult.data);
         setBookings(bookingResult.data);
       } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : 'Failed to load dashboard analytics');
+        setErrorMessage(getFriendlyErrorMessage(error, 'Unable to load dashboard data right now. Please try again.'));
       }
     };
 

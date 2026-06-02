@@ -15,8 +15,23 @@ type BookingEmailPayload = {
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private transporter: Transporter | null = null;
+  private static readonly SEND_TIMEOUT_MS = 3_000;
 
   constructor(private readonly configService: ConfigService) {}
+
+  // Cap SMTP wait so API responses are never blocked on Render/network issues.
+  private withSendTimeout<T>(promise: Promise<T>): Promise<T> {
+    const timeoutMs = Number(
+      this.configService.get<string>('SMTP_SEND_TIMEOUT_MS') ?? EmailService.SEND_TIMEOUT_MS,
+    );
+
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        setTimeout(() => reject(new Error(`Email send timeout after ${timeoutMs}ms`)), timeoutMs);
+      }),
+    ]);
+  }
 
   // Create and cache SMTP transporter from environment config.
   private getTransporter() {
@@ -38,9 +53,9 @@ export class EmailService {
       host,
       port,
       secure: port === 465,
-      connectionTimeout: 20_000,
-      greetingTimeout: 20_000,
-      socketTimeout: 30_000,
+      connectionTimeout: EmailService.SEND_TIMEOUT_MS,
+      greetingTimeout: EmailService.SEND_TIMEOUT_MS,
+      socketTimeout: EmailService.SEND_TIMEOUT_MS,
       auth: {
         user,
         pass,
@@ -62,15 +77,17 @@ export class EmailService {
     const from = `${fromName} <${fromEmail}>`;
 
     try {
-      await transporter.sendMail({
-        from,
-        to,
-        subject,
-        html,
-      });
+      await this.withSendTimeout(
+        transporter.sendMail({
+          from,
+          to,
+          subject,
+          html,
+        }),
+      );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown SMTP error';
-      this.logger.error(`Failed to send email to ${to}: ${errorMessage}`);
+      this.logger.warn(`Email skipped for ${to}: ${errorMessage}`);
     }
   }
 

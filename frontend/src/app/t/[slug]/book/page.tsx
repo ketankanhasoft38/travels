@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
@@ -10,6 +10,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Divider,
   Grid,
   Paper,
@@ -19,12 +20,17 @@ import {
 } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
+import { apiClient } from '@/lib/api-client';
 import { bookingDraftStore } from '@/lib/booking-draft';
+import { getFriendlyErrorMessage } from '@/lib/error-messages';
+import { Tour } from '@/lib/types';
 
 export default function BookTourPage() {
   const router = useRouter();
   const params = useParams<{ slug: string }>();
 
+  const [tour, setTour] = useState<Tour | null>(null);
+  const [isLoadingTour, setIsLoadingTour] = useState(true);
   const [visitorName, setVisitorName] = useState('');
   const [visitorEmail, setVisitorEmail] = useState('');
   const [guestCount, setGuestCount] = useState(1);
@@ -36,23 +42,53 @@ export default function BookTourPage() {
     guestCount?: string;
   }>({});
 
+  useEffect(() => {
+    const loadTour = async () => {
+      if (!params.slug) {
+        setIsLoadingTour(false);
+        return;
+      }
+
+      setIsLoadingTour(true);
+      setErrorMessage('');
+      try {
+        const result = await apiClient.getPublicTourBySlug(params.slug);
+        setTour(result);
+        setGuestCount((current) => Math.min(Math.max(current, 1), result.guest_limit));
+      } catch (error) {
+        setErrorMessage(getFriendlyErrorMessage(error, 'Unable to load tour details. Please try again.'));
+      } finally {
+        setIsLoadingTour(false);
+      }
+    };
+
+    void loadTour();
+  }, [params.slug]);
+
   const handleSubmitBooking = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage('');
     if (!params.slug) {
-      setErrorMessage('Invalid tour link');
+      setErrorMessage('This tour link is not valid. Please go back and choose a tour again.');
+      return;
+    }
+
+    if (!tour) {
+      setErrorMessage('Tour details are still loading. Please wait a moment and try again.');
       return;
     }
 
     const nextErrors: typeof fieldErrors = {};
     if (visitorName.trim().length < 2) {
-      nextErrors.visitorName = 'Please enter valid full name.';
+      nextErrors.visitorName = 'Please enter your full name (at least 2 characters).';
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail.trim())) {
-      nextErrors.visitorEmail = 'Please enter valid email address.';
+      nextErrors.visitorEmail = 'Please enter a valid email address.';
     }
     if (!Number.isFinite(guestCount) || guestCount < 1) {
       nextErrors.guestCount = 'Guest count must be at least 1.';
+    } else if (guestCount > tour.guest_limit) {
+      nextErrors.guestCount = `This tour allows up to ${tour.guest_limit} guest${tour.guest_limit === 1 ? '' : 's'}.`;
     }
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
@@ -70,6 +106,16 @@ export default function BookTourPage() {
     router.push(`/t/${params.slug}/payment`);
   };
 
+  if (isLoadingTour) {
+    return (
+      <AppShell title="Book Tour">
+        <Paper sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
+          <CircularProgress size={28} />
+        </Paper>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title="Book Tour">
       <Grid container spacing={2.5}>
@@ -82,6 +128,11 @@ export default function BookTourPage() {
                   <Typography color="text.secondary">
                     Enter guest information to continue to secure payment.
                   </Typography>
+                  {tour && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Maximum guests allowed for this tour: {tour.guest_limit}
+                    </Typography>
+                  )}
                 </Box>
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                   <LockIcon sx={{ fontSize: 16, color: 'success.main' }} />
@@ -124,9 +175,21 @@ export default function BookTourPage() {
                     type="number"
                     label="Guest count"
                     value={guestCount}
-                    onChange={(event) => setGuestCount(Number(event.target.value))}
+                    slotProps={{
+                      htmlInput: {
+                        min: 1,
+                        max: tour?.guest_limit ?? undefined,
+                      },
+                    }}
+                    onChange={(event) => {
+                      const parsed = Number(event.target.value);
+                      setGuestCount(Number.isFinite(parsed) ? parsed : 1);
+                    }}
                     error={Boolean(fieldErrors.guestCount)}
-                    helperText={fieldErrors.guestCount}
+                    helperText={
+                      fieldErrors.guestCount ??
+                      (tour ? `Allowed range: 1 to ${tour.guest_limit} guests` : 'Enter number of guests')
+                    }
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -142,7 +205,7 @@ export default function BookTourPage() {
                 onChange={(event) => setSpecialRequests(event.target.value)}
               />
               <Stack spacing={1}>
-                <Button type="submit" variant="contained" size="large">
+                <Button type="submit" variant="contained" size="large" disabled={!tour}>
                   Continue to Payment
                 </Button>
                 <Typography variant="caption" color="text.secondary">

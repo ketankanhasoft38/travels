@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { TourForm, TourFormPayload } from '@/components/tours/tour-form';
 import { apiClient } from '@/lib/api-client';
+import { getFriendlyErrorMessage } from '@/lib/error-messages';
 import { Tour } from '@/lib/types';
 
 export default function EditTourPage() {
@@ -22,7 +23,7 @@ export default function EditTourPage() {
         const result = await apiClient.getTourById(params.id);
         setTour(result);
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : 'Failed to fetch tour');
+        setError(getFriendlyErrorMessage(requestError, 'Unable to load tour details. Please try again.'));
       }
     };
 
@@ -39,7 +40,7 @@ export default function EditTourPage() {
       router.push('/creator/tours');
       router.refresh();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Failed to update tour');
+      setError(getFriendlyErrorMessage(requestError, 'Unable to update tour. Please review details and try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -71,7 +72,7 @@ export default function EditTourPage() {
                       const updatedTour = await apiClient.uploadTourImage(tour.id, file);
                       setTour(updatedTour);
                     } catch (requestError) {
-                      setError(requestError instanceof Error ? requestError.message : 'Image upload failed');
+                      setError(getFriendlyErrorMessage(requestError, 'Unable to upload image. Please try another file.'));
                     } finally {
                       setIsUploadingImage(false);
                     }

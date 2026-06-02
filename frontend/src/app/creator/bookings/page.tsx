@@ -17,6 +17,7 @@ import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import PendingOutlinedIcon from '@mui/icons-material/PendingOutlined';
 import { AppShell } from '@/components/layout/app-shell';
 import { apiClient } from '@/lib/api-client';
+import { getFriendlyErrorMessage } from '@/lib/error-messages';
 import { Booking } from '@/lib/types';
 
 type BookingStatusFilter = 'all' | 'pending' | 'confirmed' | 'cancelled';
@@ -58,7 +59,7 @@ export default function BookingsDashboardPage() {
         setRows(result.data);
         setRowCount(result.pagination.total);
       } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : 'Failed to load bookings');
+        setErrorMessage(getFriendlyErrorMessage(error, 'Unable to load bookings right now. Please try again.'));
       } finally {
         setIsLoading(false);
       }
@@ -114,7 +115,7 @@ export default function BookingsDashboardPage() {
                 const updated = await apiClient.updateBookingStatus(params.row.id, 'confirmed');
                 setRows((prev) => prev.map((item) => (item.id === params.row.id ? { ...item, ...updated } : item)));
               } catch (error) {
-                setErrorMessage(error instanceof Error ? error.message : 'Failed to update booking');
+                setErrorMessage(getFriendlyErrorMessage(error, 'Unable to update booking status. Please try again.'));
               } finally {
                 setStatusActionLoading(null);
               }
@@ -140,7 +141,7 @@ export default function BookingsDashboardPage() {
                 const updated = await apiClient.updateBookingStatus(params.row.id, 'cancelled');
                 setRows((prev) => prev.map((item) => (item.id === params.row.id ? { ...item, ...updated } : item)));
               } catch (error) {
-                setErrorMessage(error instanceof Error ? error.message : 'Failed to update booking');
+                setErrorMessage(getFriendlyErrorMessage(error, 'Unable to update booking status. Please try again.'));
               } finally {
                 setStatusActionLoading(null);
               }
