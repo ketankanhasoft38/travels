@@ -6,7 +6,19 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 import LockIcon from '@mui/icons-material/Lock';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { useParams, useRouter } from 'next/navigation';
-import { Alert, Box, Button, Chip, Divider, Grid, Paper, Stack, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Divider,
+  Grid,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { AppShell } from '@/components/layout/app-shell';
 import { apiClient } from '@/lib/api-client';
 import { bookingDraftStore } from '@/lib/booking-draft';
@@ -141,8 +153,14 @@ export default function PaymentPage() {
                   </Grid>
                 </Grid>
                 <Stack spacing={1}>
-                  <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
-                    {isSubmitting ? 'Processing...' : 'Pay & Confirm Booking'}
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={isSubmitting}
+                    startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : undefined}
+                  >
+                    {isSubmitting ? 'Processing Payment...' : 'Pay & Confirm Booking'}
                   </Button>
                   <Typography variant="caption" color="text.secondary">
                     Your booking request will be saved with status <strong>PENDING</strong> after payment.

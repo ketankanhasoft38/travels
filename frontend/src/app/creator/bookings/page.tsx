@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import {
   Alert,
+  Button,
+  CircularProgress,
   Chip,
   MenuItem,
   Stack,
@@ -37,6 +39,10 @@ export default function BookingsDashboardPage() {
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({ page: 0, pageSize: 10 });
   const [rowCount, setRowCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [statusActionLoading, setStatusActionLoading] = useState<{
+    bookingId: string;
+    action: 'confirmed' | 'cancelled';
+  } | null>(null);
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -91,33 +97,59 @@ export default function BookingsDashboardPage() {
       filterable: false,
       minWidth: 220,
       renderCell: (params) => (
-        <Stack direction="row" spacing={1} sx={{mt:2}}>
-          <Chip
+        <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+          <Button
             size="small"
-            label="Confirm"
+            variant="outlined"
             color="success"
+            disabled={Boolean(statusActionLoading)}
+            startIcon={
+              statusActionLoading?.bookingId === params.row.id && statusActionLoading.action === 'confirmed' ? (
+                <CircularProgress size={14} />
+              ) : undefined
+            }
             onClick={async () => {
+              setStatusActionLoading({ bookingId: params.row.id, action: 'confirmed' });
               try {
                 const updated = await apiClient.updateBookingStatus(params.row.id, 'confirmed');
                 setRows((prev) => prev.map((item) => (item.id === params.row.id ? { ...item, ...updated } : item)));
               } catch (error) {
                 setErrorMessage(error instanceof Error ? error.message : 'Failed to update booking');
+              } finally {
+                setStatusActionLoading(null);
               }
             }}
-          />
-          <Chip
+          >
+            {statusActionLoading?.bookingId === params.row.id && statusActionLoading.action === 'confirmed'
+              ? 'Confirming...'
+              : 'Confirm'}
+          </Button>
+          <Button
             size="small"
-            label="Cancel"
+            variant="outlined"
             color="error"
+            disabled={Boolean(statusActionLoading)}
+            startIcon={
+              statusActionLoading?.bookingId === params.row.id && statusActionLoading.action === 'cancelled' ? (
+                <CircularProgress size={14} />
+              ) : undefined
+            }
             onClick={async () => {
+              setStatusActionLoading({ bookingId: params.row.id, action: 'cancelled' });
               try {
                 const updated = await apiClient.updateBookingStatus(params.row.id, 'cancelled');
                 setRows((prev) => prev.map((item) => (item.id === params.row.id ? { ...item, ...updated } : item)));
               } catch (error) {
                 setErrorMessage(error instanceof Error ? error.message : 'Failed to update booking');
+              } finally {
+                setStatusActionLoading(null);
               }
             }}
-          />
+          >
+            {statusActionLoading?.bookingId === params.row.id && statusActionLoading.action === 'cancelled'
+              ? 'Cancelling...'
+              : 'Cancel'}
+          </Button>
         </Stack>
       ),
     },
