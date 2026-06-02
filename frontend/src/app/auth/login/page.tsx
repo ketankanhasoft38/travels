@@ -30,10 +30,12 @@ function LoginPageContent() {
     confirmPassword?: string;
   }>({});
 
+  // Handle creator login with field-level validation and redirect.
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
+    // Block submit when required login fields are invalid.
     const nextErrors: typeof fieldErrors = {};
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       nextErrors.email = 'Enter valid email address.';
@@ -58,9 +60,11 @@ function LoginPageContent() {
     router.refresh();
   };
 
+  // Handle creator signup and store basic profile metadata.
   const handleSignup = async () => {
     setErrorMessage('');
     setSuccessMessage('');
+    // Validate signup inputs before calling Supabase auth.
     const nextErrors: typeof fieldErrors = {};
     if (fullName.trim().length < 2) {
       nextErrors.fullName = 'Please enter a valid full name.';
@@ -84,6 +88,7 @@ function LoginPageContent() {
 
     setIsSubmitting(true);
 
+    // Persist creator role in user metadata for route protection.
     const result = await supabaseBrowser.auth.signUp({
       email,
       password,
@@ -256,6 +261,7 @@ function LoginPageContent() {
 }
 
 export default function LoginPage() {
+  // Wrap search-param usage with suspense for app-router compatibility.
   return (
     <Suspense
       fallback={

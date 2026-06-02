@@ -25,6 +25,7 @@ type TourFormProps = {
   onSubmit: (payload: TourFormPayload) => Promise<void> | void;
 };
 
+// Normalize saved itinerary to editable day/activity structure.
 const normalizeItinerary = (input: Tour['itinerary'] | undefined): ItineraryDay[] => {
   if (!input || input.length === 0) {
     return [
@@ -57,6 +58,7 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
   const [itinerary, setItinerary] = useState<ItineraryDay[]>(normalizeItinerary(initialTour?.itinerary));
   const [formError, setFormError] = useState('');
 
+  // Append a new itinerary day with default empty fields.
   const handleAddDay = () => {
     setItinerary((prev) => [
       ...prev,
@@ -69,6 +71,7 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
     ]);
   };
 
+  // Remove selected day and resequence day numbers.
   const handleRemoveDay = (dayIndex: number) => {
     setItinerary((prev) =>
       prev
@@ -80,12 +83,14 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
     );
   };
 
+  // Update day title/description in immutable state.
   const handleUpdateDay = (dayIndex: number, field: 'title' | 'description', value: string) => {
     setItinerary((prev) =>
       prev.map((item, index) => (index === dayIndex ? { ...item, [field]: value } : item)),
     );
   };
 
+  // Add one more activity row for the selected day.
   const handleAddItem = (dayIndex: number) => {
     setItinerary((prev) =>
       prev.map((item, index) =>
@@ -94,6 +99,7 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
     );
   };
 
+  // Remove activity row and keep at least one input visible.
   const handleRemoveItem = (dayIndex: number, itemIndex: number) => {
     setItinerary((prev) =>
       prev.map((item, index) => {
@@ -107,6 +113,7 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
     );
   };
 
+  // Update a specific activity entry for selected day.
   const handleUpdateItem = (dayIndex: number, itemIndex: number, value: string) => {
     setItinerary((prev) =>
       prev.map((item, index) => {
@@ -121,6 +128,7 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
     );
   };
 
+  // Validate itinerary/date logic, then submit sanitized payload.
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError('');
@@ -135,6 +143,7 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
       return;
     }
 
+    // Trim empty activity values before sending to API.
     const cleanedItinerary = itinerary.map((item, index) => ({
       day: index + 1,
       title: item.title.trim(),
@@ -156,6 +165,7 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
     });
   };
 
+  // Enable submit only when core fields and day titles are present.
   const isFormValid = useMemo(() => {
     return (
       title.trim().length > 0 &&

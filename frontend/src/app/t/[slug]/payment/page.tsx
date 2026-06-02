@@ -44,6 +44,7 @@ export default function PaymentPage() {
 
   const draft = bookingDraftStore.read();
 
+  // Ensure payment page is accessed only with a valid booking draft.
   useEffect(() => {
     if (hasCompletedPayment) {
       return;
@@ -56,6 +57,7 @@ export default function PaymentPage() {
     setIsReady(true);
   }, [draft, params.slug, router, hasCompletedPayment]);
 
+  // Validate card fields, create booking, and redirect to success page.
   const handleProcessPayment = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!draft || !params.slug) {
@@ -63,6 +65,7 @@ export default function PaymentPage() {
       return;
     }
 
+    // Validate payment fields with real-world style constraints.
     const nextErrors: typeof fieldErrors = {};
     if (cardHolderName.trim().length < 3) {
       nextErrors.cardHolderName = 'Enter valid cardholder name.';
@@ -91,6 +94,7 @@ export default function PaymentPage() {
         specialRequests: draft.specialRequests,
       });
 
+      // Prevent redirect guard from running while finishing checkout flow.
       setHasCompletedPayment(true);
       bookingDraftStore.clear();
       router.push(
@@ -155,6 +159,7 @@ export default function PaymentPage() {
                   placeholder="4242 4242 4242 4242"
                   value={cardNumber}
                   onChange={(event) => {
+                    // Keep card number masked in groups of four digits.
                     const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 16);
                     const grouped = digitsOnly.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
                     setCardNumber(grouped);
@@ -171,6 +176,7 @@ export default function PaymentPage() {
                       placeholder="08/28"
                       value={expiry}
                       onChange={(event) => {
+                        // Enforce MM/YY formatting while user types.
                         const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 4);
                         if (digitsOnly.length <= 2) {
                           setExpiry(digitsOnly);
