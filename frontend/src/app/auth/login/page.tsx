@@ -3,7 +3,7 @@
 import { Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Alert, Box, Button, Grid, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Grid, Paper, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { AppShell } from '@/components/layout/app-shell';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
@@ -89,22 +89,42 @@ function LoginPageContent() {
         <Grid size={{ xs: 12, md: 5 }}>
           <Paper sx={{ p: 3 }}>
             <Stack spacing={2} component="form" onSubmit={handleLogin}>
-              <Stack direction="row" spacing={1}>
-                <Button
-                  type="button"
-                  variant={authMode === 'login' ? 'contained' : 'outlined'}
-                  onClick={() => setAuthMode('login')}
-                >
-                  Login
-                </Button>
-                <Button
-                  type="button"
-                  variant={authMode === 'signup' ? 'contained' : 'outlined'}
-                  onClick={() => setAuthMode('signup')}
-                >
-                  Creator Sign Up
-                </Button>
-              </Stack>
+              <Tabs
+                value={authMode}
+                onChange={(_event, nextMode: 'login' | 'signup') => setAuthMode(nextMode)}
+                variant="fullWidth"
+                sx={{
+                  bgcolor: '#f7f9fd',
+                  borderRadius: 2,
+                  p: 0.5,
+                  '& .MuiTabs-indicator': { display: 'none' },
+                }}
+              >
+                <Tab
+                  value="login"
+                  label="Login"
+                  sx={{
+                    borderRadius: 1.5,
+                    minHeight: 40,
+                    '&.Mui-selected': {
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                    },
+                  }}
+                />
+                <Tab
+                  value="signup"
+                  label="Creator Sign Up"
+                  sx={{
+                    borderRadius: 1.5,
+                    minHeight: 40,
+                    '&.Mui-selected': {
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                    },
+                  }}
+                />
+              </Tabs>
               <Typography color="text.secondary">
                 {authMode === 'login'
                   ? 'Access your creator dashboard.'

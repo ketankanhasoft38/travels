@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { EmailService } from '../../integrations/email/email.service';
 import { SupabaseService } from '../../integrations/supabase/supabase.service';
 import { ToursService } from '../tours/tours.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -21,6 +22,7 @@ export class BookingsService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly toursService: ToursService,
+    private readonly emailService: EmailService,
   ) {}
 
   async createPublicBooking(slug: string, payload: CreateBookingDto) {
@@ -49,6 +51,15 @@ export class BookingsService {
     if (error) {
       throw new InternalServerErrorException(error.message);
     }
+
+    await this.emailService.sendBookingCreatedEmail({
+      customerEmail: payload.visitorEmail,
+      customerName: payload.visitorName,
+      bookingId: data.id,
+      tourTitle: tour.title,
+      guestCount: payload.guestCount,
+      totalPriceCents,
+    });
 
     return data;
   }
@@ -130,6 +141,23 @@ export class BookingsService {
 
     if (error) {
       throw new InternalServerErrorException(error.message);
+    }
+
+    const customerName = (data.visitor_name as string) ?? 'Traveler';
+    const emailPayload = {
+      customerEmail: data.visitor_email as string,
+      customerName,
+      bookingId: data.id as string,
+      tourTitle: (data.tours as { title?: string } | null)?.title ?? 'Tour Booking',
+      guestCount: data.guest_count as number,
+      totalPriceCents: data.total_price_cents as number,
+    };
+
+    if (status === 'confirmed') {
+      await this.emailService.sendBookingConfirmedEmail(emailPayload);
+    }
+    if (status === 'cancelled') {
+      await this.emailService.sendBookingCancelledEmail(emailPayload);
     }
 
     return data;

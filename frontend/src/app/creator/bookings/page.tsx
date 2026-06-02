@@ -91,7 +91,7 @@ export default function BookingsDashboardPage() {
       filterable: false,
       minWidth: 220,
       renderCell: (params) => (
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{mt:2}}>
           <Chip
             size="small"
             label="Confirm"

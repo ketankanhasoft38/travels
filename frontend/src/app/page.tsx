@@ -84,7 +84,7 @@ export default function Home() {
               <Grid size={{ xs: 12, md: 9 }}>
                 <TextField
                   fullWidth
-                  label="Where do you want to go?"
+                  label=""
                   placeholder="Search by title or location"
                   value={tourSearch}
                   onChange={(event) => handleSetTourSearch(event.target.value)}
