@@ -22,11 +22,29 @@ function LoginPageContent() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+    fullName?: string;
+    phone?: string;
+    confirmPassword?: string;
+  }>({});
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
+    const nextErrors: typeof fieldErrors = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      nextErrors.email = 'Enter valid email address.';
+    }
+    if (password.length < 8) {
+      nextErrors.password = 'Password must be at least 8 characters.';
+    }
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
     setIsSubmitting(true);
 
     const result = await supabaseBrowser.auth.signInWithPassword({ email, password });
@@ -43,17 +61,24 @@ function LoginPageContent() {
   const handleSignup = async () => {
     setErrorMessage('');
     setSuccessMessage('');
-
+    const nextErrors: typeof fieldErrors = {};
     if (fullName.trim().length < 2) {
-      setErrorMessage('Please enter a valid full name.');
-      return;
+      nextErrors.fullName = 'Please enter a valid full name.';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      nextErrors.email = 'Enter valid email address.';
+    }
+    if (phone.trim().length > 0 && !/^[0-9+\-\s]{8,15}$/.test(phone.trim())) {
+      nextErrors.phone = 'Enter valid phone number.';
     }
     if (password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters.');
-      return;
+      nextErrors.password = 'Password must be at least 8 characters.';
     }
     if (password !== confirmPassword) {
-      setErrorMessage('Password and confirm password must match.');
+      nextErrors.confirmPassword = 'Password and confirm password must match.';
+    }
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
@@ -139,11 +164,15 @@ function LoginPageContent() {
                     label="Full name"
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
+                    error={Boolean(fieldErrors.fullName)}
+                    helperText={fieldErrors.fullName}
                   />
                   <TextField
                     label="Phone"
                     value={phone}
                     onChange={(event) => setPhone(event.target.value)}
+                    error={Boolean(fieldErrors.phone)}
+                    helperText={fieldErrors.phone}
                   />
                   <TextField
                     label="Company / Brand (optional)"
@@ -158,6 +187,8 @@ function LoginPageContent() {
                 label="Email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                error={Boolean(fieldErrors.email)}
+                helperText={fieldErrors.email}
               />
               <TextField
                 required
@@ -165,6 +196,8 @@ function LoginPageContent() {
                 label="Password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                error={Boolean(fieldErrors.password)}
+                helperText={fieldErrors.password}
               />
               {authMode === 'signup' && (
                 <TextField
@@ -173,6 +206,8 @@ function LoginPageContent() {
                   label="Confirm password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
+                  error={Boolean(fieldErrors.confirmPassword)}
+                  helperText={fieldErrors.confirmPassword}
                 />
               )}
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>

@@ -55,6 +55,7 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
   const [endDate, setEndDate] = useState(initialTour?.end_date ?? '');
   const [guestLimit, setGuestLimit] = useState(initialTour?.guest_limit ?? 1);
   const [itinerary, setItinerary] = useState<ItineraryDay[]>(normalizeItinerary(initialTour?.itinerary));
+  const [formError, setFormError] = useState('');
 
   const handleAddDay = () => {
     setItinerary((prev) => [
@@ -122,6 +123,18 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setFormError('');
+
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      setFormError('Start date cannot be after end date.');
+      return;
+    }
+
+    if (itinerary.some((day) => (day.items ?? []).map((entry) => entry.trim()).filter(Boolean).length === 0)) {
+      setFormError('Each day should have at least one activity item.');
+      return;
+    }
+
     const cleanedItinerary = itinerary.map((item, index) => ({
       day: index + 1,
       title: item.title.trim(),
@@ -235,6 +248,11 @@ export const TourForm = ({ initialTour, isSubmitting, onSubmit }: TourFormProps)
             />
           </Grid>
         </Grid>
+        {formError.length > 0 && (
+          <Typography color="error" variant="body2">
+            {formError}
+          </Typography>
+        )}
         <Divider />
         <Stack spacing={1}>
           <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>

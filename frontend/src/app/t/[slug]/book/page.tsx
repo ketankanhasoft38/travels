@@ -30,12 +30,32 @@ export default function BookTourPage() {
   const [guestCount, setGuestCount] = useState(1);
   const [specialRequests, setSpecialRequests] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{
+    visitorName?: string;
+    visitorEmail?: string;
+    guestCount?: string;
+  }>({});
 
   const handleSubmitBooking = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage('');
     if (!params.slug) {
       setErrorMessage('Invalid tour link');
+      return;
+    }
+
+    const nextErrors: typeof fieldErrors = {};
+    if (visitorName.trim().length < 2) {
+      nextErrors.visitorName = 'Please enter valid full name.';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail.trim())) {
+      nextErrors.visitorEmail = 'Please enter valid email address.';
+    }
+    if (!Number.isFinite(guestCount) || guestCount < 1) {
+      nextErrors.guestCount = 'Guest count must be at least 1.';
+    }
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
@@ -83,6 +103,8 @@ export default function BookTourPage() {
                 placeholder="e.g. John Doe"
                 value={visitorName}
                 onChange={(event) => setVisitorName(event.target.value)}
+                error={Boolean(fieldErrors.visitorName)}
+                helperText={fieldErrors.visitorName}
               />
               <TextField
                 required
@@ -91,6 +113,8 @@ export default function BookTourPage() {
                 placeholder="you@example.com"
                 value={visitorEmail}
                 onChange={(event) => setVisitorEmail(event.target.value)}
+                error={Boolean(fieldErrors.visitorEmail)}
+                helperText={fieldErrors.visitorEmail}
               />
               <Grid container spacing={1.5}>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -101,6 +125,8 @@ export default function BookTourPage() {
                     label="Guest count"
                     value={guestCount}
                     onChange={(event) => setGuestCount(Number(event.target.value))}
+                    error={Boolean(fieldErrors.guestCount)}
+                    helperText={fieldErrors.guestCount}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>

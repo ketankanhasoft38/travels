@@ -35,6 +35,12 @@ export default function PaymentPage() {
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{
+    cardHolderName?: string;
+    cardNumber?: string;
+    expiry?: string;
+    cvv?: string;
+  }>({});
 
   const draft = bookingDraftStore.read();
 
@@ -54,6 +60,24 @@ export default function PaymentPage() {
     event.preventDefault();
     if (!draft || !params.slug) {
       setErrorMessage('Booking details are missing. Please start again.');
+      return;
+    }
+
+    const nextErrors: typeof fieldErrors = {};
+    if (cardHolderName.trim().length < 3) {
+      nextErrors.cardHolderName = 'Enter valid cardholder name.';
+    }
+    if (!/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/.test(cardNumber)) {
+      nextErrors.cardNumber = 'Card number must be 16 digits.';
+    }
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
+      nextErrors.expiry = 'Use MM/YY format.';
+    }
+    if (!/^\d{3,4}$/.test(cvv)) {
+      nextErrors.cvv = 'CVV must be 3 or 4 digits.';
+    }
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
@@ -122,13 +146,21 @@ export default function PaymentPage() {
                   placeholder="Name on card"
                   value={cardHolderName}
                   onChange={(event) => setCardHolderName(event.target.value)}
+                  error={Boolean(fieldErrors.cardHolderName)}
+                  helperText={fieldErrors.cardHolderName}
                 />
                 <TextField
                   required
                   label="Card number"
                   placeholder="4242 4242 4242 4242"
                   value={cardNumber}
-                  onChange={(event) => setCardNumber(event.target.value)}
+                  onChange={(event) => {
+                    const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 16);
+                    const grouped = digitsOnly.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+                    setCardNumber(grouped);
+                  }}
+                  error={Boolean(fieldErrors.cardNumber)}
+                  helperText={fieldErrors.cardNumber ?? '16-digit card number'}
                 />
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, md: 6 }}>
@@ -138,7 +170,16 @@ export default function PaymentPage() {
                       label="Expiry (MM/YY)"
                       placeholder="08/28"
                       value={expiry}
-                      onChange={(event) => setExpiry(event.target.value)}
+                      onChange={(event) => {
+                        const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 4);
+                        if (digitsOnly.length <= 2) {
+                          setExpiry(digitsOnly);
+                          return;
+                        }
+                        setExpiry(`${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}`);
+                      }}
+                      error={Boolean(fieldErrors.expiry)}
+                      helperText={fieldErrors.expiry}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
@@ -148,7 +189,9 @@ export default function PaymentPage() {
                       label="CVV"
                       placeholder="123"
                       value={cvv}
-                      onChange={(event) => setCvv(event.target.value)}
+                      onChange={(event) => setCvv(event.target.value.replace(/\D/g, '').slice(0, 4))}
+                      error={Boolean(fieldErrors.cvv)}
+                      helperText={fieldErrors.cvv}
                     />
                   </Grid>
                 </Grid>
